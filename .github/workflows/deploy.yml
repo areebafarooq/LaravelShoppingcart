@@ -3,35 +3,44 @@ name: Laravel Deploy to EC2
 on:
   push:
     branches:
-      - master   # change if you deploy from another branch
+      - master   # deploy on push to master branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout your repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup SSH key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
-
-      - name: Deploy to EC2 via SSH
+      # Step 2: Deploy to EC2 via SSH
+      - name: Deploy to EC2
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          # Save the private key from GitHub secrets
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/server_key.pem
+          chmod 600 ~/server_key.pem
+
+          # Connect to EC2 and run deployment commands
+          ssh -o StrictHostKeyChecking=no -i ~/server_key.pem ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
             set -e
             echo "Starting deployment on $(date)"
+
+            # Go to your app directory
             cd ${{ secrets.TARGET_DIR }}
+
+            # Update code from GitHub
             git fetch --all
             git reset --hard origin/master
             git pull origin master
+
+            # Install dependencies and clear cache
             composer install --no-interaction --prefer-dist --optimize-autoloader
             php artisan optimize:clear
+
             echo "Deployment finished successfully on $(date)"
           EOF
-                                                                                                                                                 git pull origin main
+                                                                                                                                 git pull origin main
                                                                                                                                                                                                        composer install --no-interaction --prefer-dist --optimize-autoloader
                                                                                                                                                                                                                    php artisan optimize:clear
                                                                                                                                                                                                                                echo "Deployment finished successfully on $(date)"
