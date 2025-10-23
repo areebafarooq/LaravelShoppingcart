@@ -1,32 +1,37 @@
- name: Laravel Deploy to EC2
+name: Laravel Deploy to EC2
 
- on:
-     push:
-           branches:
-                   - master   # change if you deploy from another branch
+on:
+  push:
+    branches:
+      - master   # change if you deploy from another branch
 
-           jobs:
-               deploy:
-                     runs-on: ubuntu-latest
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
 
-                           steps:
-                                   - name: Checkout repository
-                                             uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-                                                     - name: Setup SSH key
-                                                               uses: webfactory/ssh-agent@v0.8.1
-                                                                         with:
-                                                                                     ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
+      - name: Setup SSH key
+        uses: webfactory/ssh-agent@v0.8.1
+        with:
+          ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
 
-                                                                                             - name: Deploy to EC2 via SSH
-                                                                                                       run: |
-                                                                                                                   ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-                                                                                                                               set -e
-                                                                                                                                           echo "Starting deployment on $(date)"
-                                                                                                                                                       cd ${{ secrets.TARGET_DIR }}
-                                                                                                                                                                   git fetch --all
-                                                                                                                                                                               git reset --hard origin/main
-                                                                                                                                                                                           git pull origin main
+      - name: Deploy to EC2 via SSH
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+            set -e
+            echo "Starting deployment on $(date)"
+            cd ${{ secrets.TARGET_DIR }}
+            git fetch --all
+            git reset --hard origin/master
+            git pull origin master
+            composer install --no-interaction --prefer-dist --optimize-autoloader
+            php artisan optimize:clear
+            echo "Deployment finished successfully on $(date)"
+          EOF
+                                                                                                                                                 git pull origin main
                                                                                                                                                                                                        composer install --no-interaction --prefer-dist --optimize-autoloader
                                                                                                                                                                                                                    php artisan optimize:clear
                                                                                                                                                                                                                                echo "Deployment finished successfully on $(date)"
